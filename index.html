@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Smart Home Rheinland‑Pfalz – Komfort, Sicherheit, Ersparnis</title>
+  <meta name="description" content="Wir planen und installieren Smart‑Home‑Lösungen in Trier & Rheinland‑Pfalz: Beleuchtung, Klima, Sicherheit, Automationen und Sprachsteuerung."/>
+  <style>
+    /* =========================================
+       Design Tokens
+    ========================================= */
+    :root {
+      --bg: #0a0a0a;            /* Tiefes Schwarz */
+      --bg-elev: #0f0f10;       /* Erhöhte Flächen */
+      --fg: #f5f5f7;            /* Text hell */
+      --muted: #a6a8ad;         /* Sekundärtext */
+      --accent: #7dd3fc;        /* Cyan (Smart‑Home‑Glow) */
+      --accent-2: #60a5fa;      /* Blau / Interaktiv */
+      --gold: #ffd54d;          /* Warmes Keylight */
+      --stroke: #1a1a1c;        /* Hairline */
+      --ok: #22c55e;            /* Grün für CTA‑Hover */
+      --warn: #f59e0b;
+      --radius: 18px;
+      --maxw: 1200px;
+      --shadow-soft: 0 10px 40px rgba(0,0,0,.35);
+      --ring: 0 0 0 1px rgba(124, 231, 255, .15), 0 0 36px rgba(124, 231, 255, .15);
+    }
+
+    @media (prefers-color-scheme: light){
+      :root {
+        --bg: #fafafa;
+        --bg-elev: #ffffff;
+        --fg: #0a0a0a;
+        --muted: #5b5f66;
+        --stroke: #e6e7eb;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+      background: var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    button { font: inherit; }
+
+    /* =========================================
+       Layout Helpers
+    ========================================= */
+    .container { width: min(100% - 32px, var(--maxw)); margin-inline: auto; }
+    .stack { display: grid; gap: 16px; }
+    .grid { display: grid; gap: 20px; }
+    .card {
+      background: var(--bg-elev);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: clamp(16px, 2vw, 28px);
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: clip;
+      isolation: isolate;
+    }
+    /* Lauflicht / Edge‑Glow um Cards */
+    .card::before {
+      content: "";
+      position: absolute; inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: conic-gradient(from 0deg, transparent 0 340deg, rgba(124,231,255,.8) 360deg);
+      filter: blur(10px);
+      opacity: 0;
+      transition: opacity .6s ease;
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      padding: 1px; /* erzeugt feinen Rand */
+    }
+    .card:hover::before { opacity: .6; }
+
+    /* =========================================
+       Intro: Blackout → Lights On
+    ========================================= */
+    .intro-blackout {
+      position: fixed; inset: 0; background:#000; z-index: 9999; display:grid; place-items:center;
+      transition: opacity 1.2s ease 0.2s, visibility 0s linear 1.4s;
+    }
+    .intro-blackout.hidden { opacity: 0; visibility: hidden; }
+    .intro-lamp {
+      width: 160px; height: 160px; border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,224,.9), rgba(255,255,224,0) 60%);
+      filter: blur(6px);
+      opacity: 0; animation: bulb 1s ease forwards .4s;
+    }
+    @keyframes bulb { to { opacity: 1; transform: scale(1.04); } }
+
+    /* =========================================
+       Header + Nav (responsive, safe-area)
+    ========================================= */
+    header {
+      position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(140%) blur(8px);
+      background: color-mix(in oklab, var(--bg) 85%, transparent);
+      border-bottom: 1px solid var(--stroke);
+    }
+    .nav {
+      display:flex; align-items:center; justify-content:space-between;
+      padding: env(safe-area-inset-top) 12px;
+      gap: 12px;
+    }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.2px; }
+    .logo {
+      width: 28px; aspect-ratio:1; border-radius:8px; background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 18px rgba(124,231,255,.35), inset 0 0 8px rgba(255,255,255,.35);
+    }
+
+    .nav-links { display:flex; gap: clamp(10px, 2vw, 24px); align-items:center; }
+    .nav-links a { opacity:.9; position:relative; padding:10px 6px; }
+    /* "Licht an" unter Link (ohne sichtbare Lampe) */
+    .nav-links a::after {
+      content:""; position:absolute; left:50%; bottom:4px; translate:-50% 0; width:0; height:2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      box-shadow: 0 0 16px var(--gold);
+      transition: width .35s ease;
+    }
+    .nav-links a:hover::after, .nav-links a:focus::after { width: 80%; }
+
+    .hamb { display:none; background:none; border:1px solid var(--stroke); border-radius:10px; padding:10px; }
+    .hamb svg { width:22px; height:22px; }
+
+    @media (max-width: 880px){
+      .nav { padding-inline: 8px; }
+      .nav-links { position: fixed; inset: 60px 12px auto 12px; top: calc(env(safe-area-inset-top) + 56px);
+        flex-direction: column; align-items: stretch; background: var(--bg-elev); border:1px solid var(--stroke);
+        border-radius: 14px; padding: 12px; box-shadow: var(--shadow-soft); display:none; }
+      .nav-links.open { display:flex; }
+      .hamb { display:inline-grid; place-items:center; }
+    }
+
+    /* =========================================
+       Hero mit "Jalousie"‑Enthüllung
+    ========================================= */
+    .hero {
+      position: relative; overflow: clip; isolation:isolate; min-height: min(88vh, 860px);
+      display:grid; place-items:center;
+      background:
+        radial-gradient(1200px 400px at 50% 100%, color-mix(in oklab, var(--accent) 12%, transparent) 0%, transparent 70%),
+        radial-gradient(800px 300px at 10% 0%, color-mix(in oklab, var(--accent-2) 16%, transparent) 0%, transparent 70%);
+    }
+    .hero-inner { width: min(100% - 32px, var(--maxw)); display:grid; gap: 18px; text-align:center; }
+    .kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .14em; font-size: .82rem; }
+    h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.05; margin: 0; }
+    .lead { color: var(--muted); font-size: clamp(16px, 2.1vw, 20px); }
+
+    .actions { display:flex; gap: 12px; justify-content:center; flex-wrap: wrap; margin-top: 8px; }
+    .btn {
+      padding: 12px 18px; border-radius: 14px; border:1px solid var(--stroke); background: var(--bg-elev);
+      color: var(--fg); cursor: pointer; transition: transform .12s ease, box-shadow .2s ease, background .2s;
+    }
+    .btn.primary { background: linear-gradient(135deg, var(--accent-2), var(--accent)); border: none; color: #081018; }
+    .btn.primary:hover { box-shadow: 0 10px 40px rgba(124,231,255,.35); transform: translateY(-1px); }
+    .btn.ghost:hover { box-shadow: var(--ring); }
+
+    /* Jalousie‑Layer */
+    .blinds { position:absolute; inset:0; pointer-events:none; display:grid; }
+    .blind { background: linear-gradient(180deg, rgba(0,0,0,.85), rgba(0,0,0,.75)); border-bottom: 1px solid rgba(255,255,255,.04); }
+    .blinds.reveal .blind { animation: open 1.8s cubic-bezier(.22,.61,.36,1) forwards var(--d,0s); }
+    @keyframes open { to { transform: translateY(-110%); opacity:.1; } }
+
+    /* =========================================
+       Feature‑Icons (Smart‑Home ohne Wörter) 
+    ========================================= */
+    .features { padding: 50px 0 26px; }
+    .feature-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    @media (max-width: 960px){ .feature-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 520px){ .feature-grid { grid-template-columns: 1fr; } }
+
+    .feat { display:grid; gap:10px; place-items:start; align-content:start; }
+    .feat h3 { margin: 0; font-size: 18px; }
+    .feat p { margin: 0; color: var(--muted); }
+    .icon {
+      width: 42px; aspect-ratio: 1; border-radius: 12px; display:grid; place-items:center; background: rgba(124,231,255,.08);
+      border: 1px solid var(--stroke); box-shadow: var(--ring);
+    }
+
+    /* =========================================
+       Sektionen
+    ========================================= */
+    section { padding: clamp(54px, 6vw, 96px) 0; scroll-margin-top: 92px; }
+    .section-head { display:grid; gap: 6px; margin-bottom: 22px; }
+    .section-head h2 { margin: 0; font-size: clamp(24px, 3.6vw, 36px); }
+    .section-head p { margin: 0; color: var(--muted); }
+
+    /* Services */
+    .services-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    @media (max-width: 1024px){ .services-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 640px){ .services-grid { grid-template-columns: 1fr; } }
+
+    /* Preise */
+    .price-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    @media (max-width: 1200px){ .price-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 640px){ .price-grid { grid-template-columns: 1fr; } }
+    .price { display:grid; gap: 12px; }
+    .price h3 { margin: 0; font-size: 20px; }
+    .price ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .price .tag { display:inline-block; font-weight:700; padding:6px 10px; border-radius: 999px; background: rgba(124,231,255,.12); border:1px solid var(--stroke); }
+
+    /* Test‑Drive Banner */
+    .testdrive { display:grid; gap:14px; align-items:center; text-align:center; padding:40px; }
+
+    /* Warum wir */
+    .why-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    @media (max-width: 900px){ .why-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 520px){ .why-grid { grid-template-columns: 1fr; } }
+
+    /* Kontakt */
+    .form { display:grid; gap:12px; }
+    .row { display:grid; gap:12px; grid-template-columns: repeat(2,1fr); }
+    @media (max-width: 720px){ .row { grid-template-columns: 1fr; } }
+    label { font-size: 14px; color: var(--muted); }
+    input, select, textarea {
+      width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--stroke); background: var(--bg-elev); color: var(--fg);
+    }
+
+    /* Footer */
+    footer { padding: 40px 0; color: var(--muted); font-size: 14px; border-top:1px solid var(--stroke); }
+
+    /* Smooth Scroll */
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body>
+  <!-- Intro Blackout + weiches "Licht an" -->
+  <div class="intro-blackout" id="intro">
+    <div class="intro-lamp" aria-hidden="true"></div>
+  </div>
+
+  <!-- Header / Navigation -->
+  <header>
+    <div class="container nav">
+      <a href="#top" class="brand" aria-label="Startseite">
+        <div class="logo" aria-hidden="true"></div>
+        <span>Smart&nbsp;Home RLP</span>
+      </a>
+      <nav>
+        <button class="hamb" id="hamb" aria-label="Menü öffnen/ schließen" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <div class="nav-links" id="navlinks">
+          <a href="#about">Über uns</a>
+          <a href="#services">Leistungen</a>
+          <a href="#pricing">Pakete & Preise</a>
+          <a href="#trial">Test‑Drive</a>
+          <a href="#contact" class="btn ghost" style="padding:8px 12px;">Beratung vereinbaren</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero mit Jalousie‑Effekt -->
+  <main id="top" class="hero">
+    <div class="blinds" id="blinds" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <p class="kicker">Rheinland‑Pfalz · Trier & Umgebung</p>
+      <h1>Smarter Wohnkomfort – Licht, Klima & Sicherheit in einem System</h1>
+      <p class="lead">Wir verwandeln Ihr Zuhause in einen intelligenten Raum: von Beleuchtung und Heizung bis zu Kameras, Sensoren und Sprachsteuerung.</p>
+      <div class="actions">
+        <a href="#contact" class="btn primary">Beratung vereinbaren</a>
+        <a href="#services" class="btn ghost">Mehr erfahren</a>
+      </div>
+
+      <!-- Visuelle Features (fürs Verständnis ohne viel Text) -->
+      <section class="features container">
+        <div class="grid feature-grid">
+          <div class="card feat">
+            <div class="icon" aria-hidden="true">💡</div>
+            <h3>Komfort</h3>
+            <p>Steuern per App oder Stimme</p>
+          </div>
+          <div class="card feat">
+            <div class="icon" aria-hidden="true">💶</div>
+            <h3>Ersparnis</h3>
+            <p>Bis zu 30% weniger Energie</p>
+          </div>
+          <div class="card feat">
+            <div class="icon" aria-hidden="true">🛡️</div>
+            <h3>Sicherheit</h3>
+            <p>Kameras, Sensoren, Alarme</p>
+          </div>
+          <div class="card feat">
+            <div class="icon" aria-hidden="true">🔁</div>
+            <h3>Automationen</h3>
+            <p>„Ich bin weg“, „Guten Morgen“</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Über uns -->
+  <section id="about">
+    <div class="container">
+      <div class="section-head">
+        <h2>Wer wir sind – und warum man uns vertraut</h2>
+        <p>Wir sind Spezialisten für Smart‑Home‑Installationen in Trier & Rheinland‑Pfalz. Wir setzen auf geprüfte Marken wie Philips Hue, Sonoff, Meross, Aqara, Netatmo und Tado.</p>
+      </div>
+      <div class="grid services-grid">
+        <div class="card">
+          <strong>Beratung & Planung</strong>
+          <p class="muted">Individuell, herstellerunabhängig, skalierbar.</p>
+        </div>
+        <div class="card">
+          <strong>Installation vor Ort</strong>
+          <p class="muted">Sauber, sicher und normgerecht.</p>
+        </div>
+        <div class="card">
+          <strong>Schulung & Support</strong>
+          <p class="muted">Einrichtung, Szenen, 24/7‑Unterstützung.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Leistungen -->
+  <section id="services">
+    <div class="container">
+      <div class="section-head">
+        <h2>Was wir installieren</h2>
+        <p>Von Beleuchtung bis Zutritt – alles aus einer Hand.</p>
+      </div>
+      <div class="grid services-grid">
+        <div class="card"><h3>Smartes Licht</h3><p class="muted">Szenen, Bewegungsmelder, Präsenz.</p></div>
+        <div class="card"><h3>Klima & Heizung</h3><p class="muted">Thermostate, Pläne, Effizienz.</p></div>
+        <div class="card"><h3>Sicherheits­systeme</h3><p class="muted">Kameras, Alarme, Benachrichtigungen.</p></div>
+        <div class="card"><h3>Automationen</h3><p class="muted">Wenn‑dann‑Logik, Geofencing.</p></div>
+        <div class="card"><h3>Sprachsteuerung</h3><p class="muted">Alexa, Google, HomeKit.</p></div>
+        <div class="card"><h3>Video & Zutritt</h3><p class="muted">Türsprechanlagen, smarte Schlösser.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pakete & Preise -->
+  <section id="pricing">
+    <div class="container">
+      <div class="section-head">
+        <h2>Pakete & Preise</h2>
+        <p>Fix & fair – maßgeschneidert erweiterbar.</p>
+      </div>
+      <div class="grid price-grid">
+        <article class="card price">
+          <span class="tag">ab 199 €</span>
+          <h3>Start</h3>
+          <p class="muted">2 smarte Lampen, 1 Steckdose, App‑Steuerung</p>
+          <ul>
+            <li>Schnelle Inbetriebnahme</li>
+            <li>iOS/Android fähig</li>
+          </ul>
+          <a class="btn ghost" href="#contact">Anfragen</a>
+        </article>
+        <article class="card price">
+          <span class="tag">ab 499 €</span>
+          <h3>Komfort</h3>
+          <p class="muted">Licht (4 Zonen), 2 Thermostate, Bewegungsmelder</p>
+          <ul>
+            <li>Szenen & Zeitpläne</li>
+            <li>Energiereports</li>
+          </ul>
+          <a class="btn ghost" href="#contact">Anfragen</a>
+        </article>
+        <article class="card price">
+          <span class="tag">ab 699 €</span>
+          <h3>Sicherheit</h3>
+          <p class="muted">2 Kameras, Sensoren, Alarm, Fernzugriff</p>
+          <ul>
+            <li>Push‑Benachrichtigungen</li>
+            <li>Verschlüsselter Zugriff</li>
+          </ul>
+          <a class="btn ghost" href="#contact">Anfragen</a>
+        </article>
+        <article class="card price">
+          <span class="tag">ab 1.199 €</span>
+          <h3>Maximum</h3>
+          <p class="muted">Licht, Klima, Sicherheit, Sprache, 10+ Geräte</p>
+          <ul>
+            <li>Volle Automationen</li>
+            <li>Individuelle Szenarien</li>
+          </ul>
+          <a class="btn ghost" href="#contact">Anfragen</a>
+        </article>
+      </div>
+      <p class="container" style="color:var(--muted); margin-top: 12px; font-size: 14px;">Preise inkl. Basis‑Installation. Individuelle Lösungen auf Anfrage.</p>
+    </div>
+  </section>
+
+  <!-- Test‑Drive -->
+  <section id="trial">
+    <div class="container">
+      <div class="card testdrive">
+        <h2>Testen Sie Smart Home 7 Tage kostenlos</h2>
+        <p class="lead">Wir installieren ein Demo‑Set bei Ihnen zu Hause. Entscheiden Sie danach, was bleibt. Kaution: 50 € (wird erstattet oder verrechnet).</p>
+        <div>
+          <a href="#contact" class="btn primary">Jetzt Test buchen</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Warum wir -->
+  <section id="why">
+    <div class="container">
+      <div class="section-head">
+        <h2>Warum Kunden uns wählen</h2>
+        <p>Offiziell, mit Garantie & Support.</p>
+      </div>
+      <div class="grid why-grid">
+        <div class="card"><strong>5+ Jahre Erfahrung</strong><p class="muted">Technik, die einfach funktioniert.</p></div>
+        <div class="card"><strong>Transparente Preise</strong><p class="muted">Klare Pakete & Optionen.</p></div>
+        <div class="card"><strong>24/7 Support</strong><p class="muted">Wenn es zählt, sind wir da.</p></div>
+        <div class="card"><strong>Kostenlose Beratung</strong><p class="muted">Ersttermin ohne Risiko.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Kontakt / Online‑Termin -->
+  <section id="contact">
+    <div class="container">
+      <div class="section-head">
+        <h2>Online‑Termin / Kontakt</h2>
+        <p>Wir melden uns schnellstmöglich zurück.</p>
+      </div>
+      <form class="card form" onsubmit="event.preventDefault(); alert('Vielen Dank! Wir melden uns. (Backend wird später angebunden)');">
+        <div class="row">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" name="name" required placeholder="Max Mustermann" />
+          </div>
+          <div>
+            <label for="contactField">Telefon oder E‑Mail</label>
+            <input id="contactField" name="contact" required placeholder="+49 … / name@mail.de" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="address">Adresse (optional)</label>
+            <input id="address" name="address" placeholder="Straße, Nr., Ort" />
+          </div>
+          <div>
+            <label for="service">Leistung / Paket</label>
+            <select id="service" name="service">
+              <option>Smartes Licht</option>
+              <option>Klima & Heizung</option>
+              <option>Sicherheit</option>
+              <option>Automationen</option>
+              <option>Sprachsteuerung</option>
+              <option>Video & Zutritt</option>
+              <option>Start</option>
+              <option>Komfort</option>
+              <option>Sicherheit (Paket)</option>
+              <option>Maximum</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="date">Wunschtermin</label>
+            <input id="date" type="date" />
+          </div>
+          <div>
+            <label for="time">Uhrzeit</label>
+            <input id="time" type="time" />
+          </div>
+        </div>
+        <div>
+          <label for="msg">Nachricht</label>
+          <textarea id="msg" rows="4" placeholder="Kurz Ihr Anliegen…"></textarea>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <button class="btn primary" type="submit">Anfrage senden</button>
+          <span style="color:var(--muted); font-size:14px;">📍 Trier, Rheinland‑Pfalz · 📞 +49 XXX XXX XXX · ✉ info@smarthome‑trier.de</span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container" style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <span>© <span id="year"></span> Smart Home Rheinland‑Pfalz</span>
+      <a href="#top">Nach oben</a>
+    </div>
+  </footer>
+
+  <script>
+    // ===== Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ===== Mobile Nav
+    const hamb = document.getElementById('hamb');
+    const navlinks = document.getElementById('navlinks');
+    hamb.addEventListener('click', () => {
+      const open = navlinks.classList.toggle('open');
+      hamb.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    // Close menu on link click (mobile)
+    navlinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      navlinks.classList.remove('open');
+      hamb.setAttribute('aria-expanded', 'false');
+    }));
+
+    // ===== Intro sequence (Blackout -> Lights on)
+    const intro = document.getElementById('intro');
+    window.addEventListener('load', () => {
+      // Small delay for effect
+      setTimeout(() => intro.classList.add('hidden'), 900);
+    });
+
+    // ===== Hero Jalousie build (random heights & delays)
+    const blindsWrap = document.getElementById('blinds');
+    const rows = Math.max(10, Math.min(18, Math.round(window.innerHeight / 60)));
+    for (let i = 0; i < rows; i++) {
+      const d = document.createElement('div');
+      d.className = 'blind';
+      // Leichte Varianz in der Höhe + Verzögerung
+      const h = 100/rows + (Math.random() * 2 - 1); // +-1%
+      d.style.height = h + 'vh';
+      d.style.setProperty('--d', (i * 0.06 + Math.random() * 0.08) + 's');
+      blindsWrap.appendChild(d);
+    }
+
+    // Start reveal on first intersection
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          blindsWrap.classList.add('reveal');
+          io.unobserve(e.target);
+        }
+      })
+    }, { threshold: 0.3 });
+    io.observe(document.querySelector('.hero'));
+
+    // ===== Respect reduced motion
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reduce.matches) {
+      document.documentElement.style.scrollBehavior = 'auto';
+      // Kill fancy animations for accessibility
+      document.querySelectorAll('.blinds, .intro-blackout').forEach(el => el.remove());
+    }
+  </script>
+</body>
+</html>
