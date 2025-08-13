@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="color-scheme" content="dark light" />
+  <meta name="color-scheme" content="dark" />
   <title>Smart Home Rheinland‑Pfalz – Komfort, Sicherheit, Ersparnis</title>
   <meta name="description" content="Wir planen und installieren Smart‑Home‑Lösungen in Trier & Rheinland‑Pfalz: Beleuchtung, Klima, Sicherheit, Automationen und Sprachsteuerung."/>
   <style>
@@ -11,6 +11,7 @@
        Design Tokens
     ========================================= */
     :root {
+      color-scheme: dark;
       --bg: #0a0a0a;            /* Tiefes Schwarz */
       --bg-elev: #0f0f10;       /* Erhöhte Flächen */
       --fg: #f5f5f7;            /* Text hell */
@@ -25,16 +26,6 @@
       --maxw: 1200px;
       --shadow-soft: 0 10px 40px rgba(0,0,0,.35);
       --ring: 0 0 0 1px rgba(124, 231, 255, .15), 0 0 36px rgba(124, 231, 255, .15);
-    }
-
-    @media (prefers-color-scheme: light){
-      :root {
-        --bg: #fafafa;
-        --bg-elev: #ffffff;
-        --fg: #0a0a0a;
-        --muted: #5b5f66;
-        --stroke: #e6e7eb;
-      }
     }
 
     * { box-sizing: border-box; }
